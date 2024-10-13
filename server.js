@@ -10,7 +10,7 @@ const app = express();
 
 // 데이터베이스 옵션 설정
 var options = {
-  host: 'localhost',
+  host: '127.0.0.1',
   user: 'root',
   password: '1019',
   database: 'user'
