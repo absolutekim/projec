@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movies in Movies</title>
+    <!-- Bootstrap CSS CDN -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/common.css" rel="stylesheet">
+    <!-- Highcharts CDN -->
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/modules/export-data.js"></script>
+    <script src="https://code.highcharts.com/modules/accessibility.js"></script>
+    <!-- jQuery CDN for AJAX -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        /* 스타일 추가 */
+        .navbar-brand {
+            font-size: 2rem; /* 네비게이션 바 제목 크기 */
+            font-weight: bold;
+        }
+        .navbar-nav .nav-link {
+            font-size: 1.2rem; /* 네비게이션 링크 크기 */
+            padding-right: 20px; /* 네비게이션 간격 조정 */
+        }
+        .divider {
+            margin: 20px 0; /* 구분선 위아래 간격 */
+            border-bottom: 2px solid #ddd; /* 구분선 스타일 */
+        }
+        .jumbotron h1 {
+            font-size: 3rem; /* 메인 제목 크기 */
+            font-weight: bold;
+        }
+        .jumbotron p.lead {
+            font-size: 1.25rem; /* 설명 문구 크기 */
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="/">Movies in Movies</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ml-auto">
+                <% if (session && session.isLogined) { %>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/mypage">My Page (<%= session.uid %>)</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/logout">Logout</a>
+                    </li>
+                <% } else { %>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/login">Login</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/regist">Sign Up</a>
+                    </li>
+                <% } %>
+                <li class="nav-item">
+                    <a class="nav-link" href="/movies">View Movie List</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Divider -->
+    <div class="divider"></div>
+
+    <!-- Main Content -->
+    <div class="container mt-5">
+        <div class="jumbotron text-center">
+            <h1 class="display-4">Welcome to Movies in Movies!</h1>
+            <p class="lead">Explore various movies and enjoy great film resources with us. Whether you're interested in domestic or international films, we have it all!</p>
+            <hr class="my-4">
+            <p>Sign up now to enjoy exclusive features and access your favorite movies.</p>
+            <% if (!session || !session.isLogined) { %>
+                <a class="btn btn-primary btn-lg" href="/regist" role="button">Sign Up Today</a>
+            <% } %>
+        </div>
+
+        <!-- Divider -->
+        <div class="divider"></div>
+
+        <!-- Navigation Section -->
+        <div class="container mt-3">
+            <div class="row">
+                <div class="col-12">
+                    <div class="d-flex justify-content-start">
+                        <a href="/movies" class="btn btn-secondary">Movie List</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table Section for Charts -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Table Section</h5>
+                        <div id="chartContainer" class="d-flex justify-content-between">
+                            <div id="yearBarChart" style="width: 48%; height: 400px;"></div>
+                            <div id="yearPieChart" style="width: 48%; height: 400px;"></div>
+                        </div>
+                        <div id="chartContainer2" class="d-flex justify-content-between mt-4">
+                            <div id="genrePieChart" style="width: 48%; height: 400px;"></div>
+                            <div id="topGenresBarChart" style="width: 48%; height: 400px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table Section 2 and 3 (not defined yet) -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Table Section 2 (Not made yet)</h5>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Table Section 3 (Not made yet)</h5>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AJAX로 서버에서 데이터를 가져와 차트를 생성 -->
+    <script>
+        $(document).ready(function() {
+            // 연도별 영화 차트
+            $.ajax({
+                url: '/get-year-data',  // 서버에서 연도별 데이터를 가져오는 경로
+                type: 'GET',
+                dataType: 'json',
+                success: function (yearData) {
+                    const years = yearData.map(data => data.year);
+                    const counts = yearData.map(data => data.count);
+
+                    Highcharts.chart('yearBarChart', {
+                        chart: { type: 'column' },
+                        title: { text: 'Movies by Release Year' },
+                        xAxis: { categories: years, title: { text: 'Release Year' } },
+                        yAxis: { min: 0, title: { text: 'Number of Movies' } },
+                        series: [{ name: 'Movies', data: counts }]
+                    });
+
+                    const total = yearData.reduce((acc, curr) => acc + curr.count, 0);
+                    const pieData = yearData.map(data => ({
+                        name: data.year,
+                        y: parseFloat((data.count / total * 100).toFixed(2))
+                    }));
+
+                    Highcharts.chart('yearPieChart', {
+                        chart: { type: 'pie' },
+                        title: { text: 'Movies by Release Year (Percentage)' },
+                        series: [{ name: 'Movies', colorByPoint: true, data: pieData }]
+                    });
+                }
+            });
+
+            // 장르별 영화 차트
+            $.ajax({
+                url: '/get-genre-data',
+                type: 'GET',
+                dataType: 'json',
+                success: function (genreData) {
+                    const totalGenres = genreData.reduce((acc, curr) => acc + curr.count, 0);
+                    const pieData = genreData.map(data => ({
+                        name: data.name,
+                        y: parseFloat((data.count / totalGenres * 100).toFixed(2))
+                    }));
+
+                    Highcharts.chart('genrePieChart', {
+                        chart: { type: 'pie' },
+                        title: { text: 'Movies by Genre (Percentage)' },
+                        series: [{ name: 'Genres', colorByPoint: true, data: pieData }]
+                    });
+                }
+            });
+
+            // 상위 10개 장르 차트
+            $.ajax({
+                url: '/get-top-genres-data',
+                type: 'GET',
+                dataType: 'json',
+                success: function (topGenreData) {
+                    const genres = topGenreData.map(data => data.name);
+                    const movieCounts = topGenreData.map(data => data.count);
+
+                    Highcharts.chart('topGenresBarChart', {
+                        chart: { type: 'bar' },
+                        title: { text: 'Top 10 Genres by Movie Count' },
+                        xAxis: { categories: genres, title: { text: 'Genres' } },
+                        yAxis: { min: 0, title: { text: 'Number of Movies' } },
+                        series: [{ name: 'Movies', data: movieCounts }]
+                    });
+                }
+            });
+        });
+    </script>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
