@@ -10,10 +10,11 @@ const app = express();
 
 // 데이터베이스 옵션 설정
 var options = {
-  host: '127.0.0.1',
-  user: 'root',
-  password: '1019',
-  database: 'user'
+  host: 'svc.sel4.cloudtype.app', // Cloudtype의 MariaDB 호스트 주소
+  user: 'root',                   // MariaDB 유저명
+  password: '1019',               // MariaDB 패스워드
+  database: 'user',               // 사용할 데이터베이스 이름
+  port: '30564'                   // MariaDB 포트 번호
 };
 
 // 세션 저장소 설정
@@ -28,11 +29,11 @@ app.use(session({
 
 // MySQL 데이터베이스 연결 설정
 const connection = mysql.createConnection({
-  host: process.env.DB_HOST || '127.0.0.1',
+  host: process.env.DB_HOST || 'svc.sel4.cloudtype.app',
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || '1019',
   database: process.env.DB_NAME || 'user',
-  port: process.env.DB_PORT || '3306',
+  port: process.env.DB_PORT || '30564', // MariaDB 포트 번호
 });
 
 
