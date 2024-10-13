@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie List - Movie List in Movie</title>
+    <!-- Bootstrap CSS CDN -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/common.css" rel="stylesheet">
+    <style>
+        /* 카드에 스타일 추가 */
+        .card {
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        /* hover 시 확대와 그림자 효과 */
+        .card:hover {
+            transform: scale(1.05); /* 카드 확대 */
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3); /* 그림자 효과 */
+        }
+
+        /* 카드 이미지에 부드러운 애니메이션 */
+        .card img {
+            transition: transform 0.3s ease-in-out;
+        }
+
+        /* hover 시 이미지 확대 */
+        .card:hover img {
+            transform: scale(1.1); /* 이미지 확대 */
+        }
+
+        /* 버튼에 약간의 애니메이션 추가 */
+        .btn-primary {
+            transition: background-color 0.3s, transform 0.3s;
+        }
+
+        .btn-primary:hover {
+            background-color: #0056b3; /* 버튼 색상 변경 */
+            transform: translateY(-3px); /* 버튼 위로 살짝 이동 */
+        }
+
+        /* 카드 텍스트를 가운데 정렬 */
+        .card-body {
+            text-align: center;
+        }
+
+        /* 카드를 깔끔하게 배열하는데 도움 */
+        .card-deck {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="/">Movies in Movies</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ml-auto">
+                <% if (session && session.isLogined) { %>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/mypage">My Page (<%= session.uid %>)</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/logout">Logout</a>
+                    </li>
+                <% } else { %>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/login">Login</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/regist">Sign Up</a>
+                    </li>
+                <% } %>
+                <li class="nav-item">
+                    <a class="nav-link" href="/movies">View Movie List</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Filter Form -->
+    <div class="container mt-5">
+        <h2 class="text-center mb-4">Filter Movies by Genre and Year</h2>
+
+        <!-- 장르 선택 체크박스 및 연도 입력 필터링 -->
+        <form id="filter-form" class="mb-4">
+            <div class="form-group">
+                <label for="genres">Select Genres:</label>
+                <div id="genres-container">
+                    <!-- Genre checkboxes -->
+                    <% const genres = ["Action", "Adventure", "Animation", "Comedy", "Crime", "Documentary", "Drama", "Family", "Fantasy", "History", "Horror", "Music", "Mystery", "Romance", "Science Fiction", "TV Movie", "Thriller", "War", "Western", "unknown"]; %>
+                    <% genres.forEach(genre => { %>
+                        <label><input type="checkbox" class="genre-checkbox" value="<%= genre %>"> <%= genre %></label>
+                    <% }); %>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="year-input">Enter Year:</label>
+                <input type="number" id="year-input" class="form-control" placeholder="Enter a year (e.g. 2020)">
+            </div>
+        </form>
+
+        <!-- Movies List -->
+        <div class="row card-deck" id="movies-container">
+            <div class="row">
+            <% movies.forEach(function(movie) { %>
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100">
+                        <% if (movie.Poster_Link) { %>
+                            <img src="<%= movie.Poster_Link %>" class="card-img-top" alt="<%= movie.title %> Poster">
+                        <% } %>
+                        <div class="card-body">
+                            <h5 class="card-title"><%= movie.title %></h5>
+                            <p class="card-text"><strong>Overview:</strong> <%= movie.overview %></p>
+                            <p><strong>Release Year:</strong> <%= movie.release_year %></p>
+                            <p><strong>Genres:</strong> <%= movie.genres_list %></p>
+                            <button class="btn btn-primary like-btn" data-movie-id="<%= movie.id %>">Like</button>
+                        </div>
+                    </div>
+                </div>
+            <% }); %>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            <% const pageGroupSize = 5; %> <!-- 한 번에 표시할 페이지 개수 -->
+            <% const startPage = Math.floor((currentPage - 1) / pageGroupSize) * pageGroupSize + 1; %>
+            <% const endPage = Math.min(startPage + pageGroupSize - 1, totalPages); %>
+
+            <!-- 이전 페이지 버튼 -->
+            <% if (currentPage > 1) { %>
+                <li class="page-item">
+                    <a class="page-link" href="<%= query ? `/movies/search?query=${query}&page=${currentPage - 1}` : `/movies?page=${currentPage - 1}` %>" aria-label="Previous">
+                        <span aria-hidden="true">&laquo; Previous</span>
+                    </a>
+                </li>
+            <% } %>
+
+            <!-- 현재 그룹의 페이지 번호 버튼 -->
+            <% for (let i = startPage; i <= endPage; i++) { %>
+                <li class="page-item <%= (i === currentPage) ? 'active' : '' %>">
+                    <a class="page-link" href="<%= query ? `/movies/search?query=${query}&page=${i}` : `/movies?page=${i}` %>"><%= i %></a>
+                </li>
+            <% } %>
+
+            <!-- 다음 페이지 버튼 -->
+            <% if (currentPage < totalPages) { %>
+                <li class="page-item">
+                    <a class="page-link" href="<%= query ? `/movies/search?query=${query}&page=${currentPage + 1}` : `/movies?page=${currentPage + 1}` %>" aria-label="Next">
+                        <span aria-hidden="true">Next &raquo;</span>
+                    </a>
+                </li>
+            <% } %>
+        </ul>
+    </nav>
+
+    <!-- Footer -->
+    <footer class="footer mt-5 py-3 bg-light">
+        <div class="container">
+            <span class="text-muted">© 2024 Movie List in Movie, All rights reserved.</span>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const genreCheckboxes = document.querySelectorAll('.genre-checkbox');
+            const yearInput = document.getElementById('year-input');
+    
+            // 장르 체크박스와 연도 입력 변경 시 필터링 실행
+            genreCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', filterMovies);
+            });
+            yearInput.addEventListener('input', filterMovies);
+    
+            // 필터링된 영화 목록을 가져와서 업데이트
+            function filterMovies() {
+                const selectedGenres = Array.from(genreCheckboxes)
+                    .filter(checkbox => checkbox.checked)
+                    .map(checkbox => checkbox.value);
+                const selectedYear = yearInput.value;
+    
+                // AJAX 요청 보내기
+                fetch('/movies/filter', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ genres: selectedGenres, year: selectedYear })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const moviesContainer = document.getElementById('movies-container');
+                    moviesContainer.innerHTML = ''; // 기존 콘텐츠를 비웁니다.
+    
+                    if (data.movies && data.movies.length > 0) {
+                        let rowHTML = `<div class="row">`; // 필터링된 카드들이 들어갈 행 시작
+    
+                        data.movies.forEach(movie => {
+                            rowHTML += `
+                                <div class="col-md-6 col-lg-4 mb-4">
+                                    <div class="card h-100">
+                                        <img src="${movie.Poster_Link}" class="card-img-top" alt="${movie.title} Poster">
+                                        <div class="card-body d-flex flex-column">
+                                            <h5 class="card-title">${movie.title}</h5>
+                                            <p class="card-text"><strong>Overview:</strong> ${movie.overview}</p>
+                                            <p><strong>Release Year:</strong> ${movie.release_year}</p>
+                                            <p><strong>Genres:</strong> ${movie.genres_list}</p>
+                                            <button class="btn btn-primary mt-auto like-btn" data-movie-id="${movie.id}">Like</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+    
+                        rowHTML += `</div>`; // 행 종료
+                        moviesContainer.innerHTML = rowHTML; // 완성된 HTML을 삽입
+    
+                        // 필터링 후에도 다시 좋아요 버튼 이벤트 리스너를 등록합니다.
+                        addLikeButtonListeners();
+                    } else {
+                        moviesContainer.innerHTML = '<p>No movies found.</p>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while filtering movies.');
+                });
+            }
+    
+            // Like 버튼 클릭 시 처리
+            function addLikeButtonListeners() {
+                const likeButtons = document.querySelectorAll('.like-btn');
+    
+                likeButtons.forEach(button => {
+                    button.addEventListener('click', function () {
+                        const movieId = this.dataset.movieId;
+    
+                        // AJAX 요청 보내기
+                        fetch('/movies/like', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ movieId: movieId })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                alert('Movie liked successfully!');
+                            } else {
+                                alert(data.message || 'Failed to like the movie.');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('An error occurred while liking the movie.');
+                        });
+                    });
+                });
+            }
+    
+            // 초기 페이지 로드 시 좋아요 버튼에 이벤트 리스너 등록
+            addLikeButtonListeners();
+        });
+    </script>
+    
+</body>
+
+</html>
