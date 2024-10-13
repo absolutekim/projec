@@ -10,10 +10,10 @@ const app = express();
 
 // 데이터베이스 옵션 설정
 var options = {
-  host: 'localhost',
+  host: 'svc.sel4.cloudtype.app',
   user: 'root',
   password: '1019',
-  database: 'user'
+  database: 'testdb'
 };
 
 // 세션 저장소 설정
